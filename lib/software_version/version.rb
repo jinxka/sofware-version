@@ -9,13 +9,14 @@ module SoftwareVersion
     end
 
     def <=>(other)
+      # Defer to the more specific semantics (e.g. Rpm) whenever the other
+      # operand is a subclass of ours, so the comparison stays symmetric
+      # regardless of operand order. Checked through the class hierarchy rather
+      # than by naming the subclass, so this file loads on its own.
+      return -(other <=> self) if other.is_a?(Version) && other.class < self.class
+
       other_tokens = other.is_a?(Version) ? other.tokens : parse(other.to_s)
-      tokens.zip(other_tokens) do |left, right|
-        cmp = left[0] <=> right[0]
-        cmp = left[1] <=> right[1] if cmp == 0
-        return cmp if cmp != 0
-      end
-      0
+      compare_tokens(tokens, other_tokens)
     end
 
     def to_s
@@ -91,6 +92,17 @@ module SoftwareVersion
       @tokens ||= parse(@v.to_s)
     end
 
+    # Compare two Token arrays pairwise. Types are compared first, values
+    # break the tie. Returns -1, 0 or 1.
+    def compare_tokens(left_tokens, right_tokens)
+      left_tokens.zip(right_tokens) do |left, right|
+        cmp = left[0] <=> right[0]
+        cmp = left[1] <=> right[1] if cmp == 0
+        return cmp if cmp != 0
+      end
+      0
+    end
+
     private
 
     # Associate characters to their token types. Multiple characters of the
@@ -128,7 +140,6 @@ module SoftwareVersion
         case chunk_type
         when nil then return
         when Token::NUMBER then tokens << [Token::NUMBER, chunk_value.to_i]
-        when Token::WORD then tokens << [Token::WORD, chunk_value.downcase]
         else tokens << [chunk_type, chunk_value]
         end
         chunk_type = nil
@@ -179,7 +190,10 @@ module SoftwareVersion
         when Token::CARET
           semantic_tokens << (ahead[0] == Token::EOV ? [Token::MAX, current[1]] : current)
 
+        # Words are case-insensitive for the generic semantic. The lexer keeps
+        # the original case because subclasses may be case-sensitive.
         when Token::WORD
+          current = [Token::WORD, current[1].downcase]
           case current[1]
           # Some special words are just fancy ways of making a subversion.
           # Semantically, they are nothing more than dots, so 1u1 = 1.1. Some
