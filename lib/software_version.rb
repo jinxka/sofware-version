@@ -1,4 +1,5 @@
 require 'software_version/version'
+require 'software_version/rpm'
 
 module SoftwareVersion
 end

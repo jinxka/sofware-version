@@ -9,13 +9,14 @@ module SoftwareVersion
     end
 
     def <=>(other)
+      # Defer to the more specific semantics (e.g. Rpm) whenever the other
+      # operand is a subclass of ours, so the comparison stays symmetric
+      # regardless of operand order. Checked through the class hierarchy rather
+      # than by naming the subclass, so this file loads on its own.
+      return -(other <=> self) if other.is_a?(Version) && other.class < self.class
+
       other_tokens = other.is_a?(Version) ? other.tokens : parse(other.to_s)
-      tokens.zip(other_tokens) do |left, right|
-        cmp = left[0] <=> right[0]
-        cmp = left[1] <=> right[1] if cmp == 0
-        return cmp if cmp != 0
-      end
-      0
+      compare_tokens(tokens, other_tokens)
     end
 
     def to_s
@@ -89,6 +90,17 @@ module SoftwareVersion
     # comparisons.
     def tokens
       @tokens ||= parse(@v.to_s)
+    end
+
+    # Compare two Token arrays pairwise. Types are compared first, values
+    # break the tie. Returns -1, 0 or 1.
+    def compare_tokens(left_tokens, right_tokens)
+      left_tokens.zip(right_tokens) do |left, right|
+        cmp = left[0] <=> right[0]
+        cmp = left[1] <=> right[1] if cmp == 0
+        return cmp if cmp != 0
+      end
+      0
     end
 
     private

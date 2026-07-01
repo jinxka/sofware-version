@@ -53,12 +53,6 @@ Layout/FirstHashElementIndentation:
     - 'lib/software_version/version.rb'
 
 # Offense count: 1
-# Configuration parameters: AllowComments, AllowEmptyLambdas.
-Lint/EmptyBlock:
-  Exclude:
-    - 'spec/software_version_spec.rb'
-
-# Offense count: 1
 # Configuration parameters: AllowComments.
 Lint/EmptyWhen:
   Exclude:
@@ -145,12 +139,6 @@ RSpec/DescribedClass:
     - 'spec/software_version/deb_spec.rb'
     - 'spec/software_version/rpm_spec.rb'
     - 'spec/software_version/windows_application_spec.rb'
-
-# Offense count: 1
-# This cop supports unsafe autocorrection (--autocorrect-all).
-RSpec/EmptyExampleGroup:
-  Exclude:
-    - 'spec/software_version_spec.rb'
 
 # Offense count: 5
 # Configuration parameters: CountAsOne.
